@@ -3,18 +3,24 @@ import express, { NextFunction, Request, Response } from "express";
 import connectDB from "./db/db";
 import { commentRouter } from "./routes/comment/comment";
 import { postRouter } from "./routes/post/post";
+import cors from "cors";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
+app.use(cors({ origin: "*", optionsSuccessStatus: 200 }));
 app.use(express.json());
 // ! *the extended: true option will work fine with postman but not with front-end apps*
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/post", postRouter);
 app.use("/api/comment", commentRouter);
+
+app.use("/api", (req, res) => {
+  res.status(404).json({ message: "API route not found" });
+});
 
 declare global {
   interface CustomError extends Error {
