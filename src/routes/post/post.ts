@@ -5,7 +5,7 @@ const router = Router();
 
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const posts = await Post.find();
+    const posts = await Post.find().populate("comments");
     res.status(200).json(posts);
   } catch (error) {
     next(error);
