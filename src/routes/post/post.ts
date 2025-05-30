@@ -1,7 +1,28 @@
-import { NextFunction, request, Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import Post from "../../models/post/post";
 
 const router = Router();
+
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  // ! nodejs doesn't recognize that url without the :id param, because for nodejs, all url's parameters are required.
+  const { id } = req.body;
+
+  console.log(id);
+
+  try {
+    if (!id) {
+      const allPosts = await Post.find();
+      res.status(200).send(allPosts);
+    } else {
+      const post = await Post.findOne({ _id: id }).populate("comments");
+      res.status(200).send(post);
+    }
+  } catch (err) {
+    const error = new Error("Something went wrong, Try again!") as CustomError;
+    error.status = 500;
+    return next(error);
+  }
+});
 
 router.post("/new", async (req: Request, res: Response, next: NextFunction) => {
   const { title, content } = req.body;
@@ -56,6 +77,35 @@ router.post(
     }
 
     res.status(200).json(updatedPost);
+  }
+);
+
+router.delete(
+  "/delete/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+
+    if (!id) {
+      const error = new Error("Post id is required!") as CustomError;
+      error.status = 400;
+      return next(error);
+    }
+
+    const checkedId = await Post.findById(id);
+    if (!checkedId) {
+      const error = new Error("Post id is not found!") as CustomError;
+      error.status = 404;
+      return next(error);
+    }
+    try {
+      await Post.findOneAndDelete({ _id: checkedId });
+    } catch (err) {
+      const error = new Error("Post can not delete, Try again!") as CustomError;
+      error.status = 500;
+      return next(error);
+    }
+
+    res.status(200).json({ message: "Post deleted successfully" });
   }
 );
 
