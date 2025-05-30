@@ -3,27 +3,30 @@ import Post from "../../models/post/post";
 
 const router = Router();
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
-  // ! nodejs doesn't recognize that url without the :id param, because for nodejs, all url's parameters are required.
-  const { id } = req.body;
-
-  console.log(id);
-
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!id) {
-      const allPosts = await Post.find();
-      res.status(200).send(allPosts);
-    } else {
-      const post = await Post.findOne({ _id: id }).populate("comments");
-      res.status(200).send(post);
-    }
-  } catch (err) {
-    const error = new Error("Something went wrong, Try again!") as CustomError;
-    error.status = 500;
-    return next(error);
+    const posts = await Post.find();
+    res.status(200).json(posts);
+  } catch (error) {
+    next(error);
   }
 });
 
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      const error = new Error("Post not found") as CustomError;
+      error.status = 404;
+      return next(error);
+    }
+
+    res.status(200).json(post);
+  } catch (error) {
+    next(error);
+  }
+});
 router.post("/new", async (req: Request, res: Response, next: NextFunction) => {
   const { title, content } = req.body;
 
