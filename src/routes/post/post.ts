@@ -29,19 +29,22 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.post("/new", async (req: Request, res: Response, next: NextFunction) => {
-  const { title, content } = req.body;
+  try {
+    const { title, content } = req.body;
 
-  if (!title || !content) {
-    const error = new Error("Title and content are required!") as CustomError;
-    error.status = 400;
-    return next(error);
+    if (!title || !content) {
+      const error = new Error("Title and content are required!") as CustomError;
+      error.status = 400;
+      return next(error);
+    }
+
+    const newPost = new Post({ title, content });
+    await newPost.save();
+
+    res.status(201).json(newPost);
+  } catch (error) {
+    next(error);
   }
-
-  const newPost = new Post({ title, content });
-
-  await newPost.save();
-
-  res.status(201).json({ newPost });
 });
 
 router.post(
@@ -74,10 +77,8 @@ router.post(
         { $set: { title, content } },
         { new: true }
       );
-    } catch (err) {
-      const error = new Error("Post can not update, Try again!") as CustomError;
-      error.status = 500;
-      return next(error);
+    } catch (error) {
+      next(error);
     }
 
     res.status(200).json(updatedPost);
@@ -103,10 +104,8 @@ router.delete(
     }
     try {
       await Post.findOneAndDelete({ _id: checkedId });
-    } catch (err) {
-      const error = new Error("Post can not delete, Try again!") as CustomError;
-      error.status = 500;
-      return next(error);
+    } catch (error) {
+      next(error);
     }
 
     res.status(200).json({ message: "Post deleted successfully" });

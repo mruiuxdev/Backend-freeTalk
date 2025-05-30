@@ -1,9 +1,10 @@
+import cookieSession from "cookie-session";
+import cors from "cors";
 import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import connectDB from "./db/db";
 import { commentRouter } from "./routes/comment/comment";
 import { postRouter } from "./routes/post/post";
-import cors from "cors";
 
 dotenv.config();
 connectDB();
@@ -11,9 +12,11 @@ connectDB();
 const app = express();
 
 app.use(cors({ origin: "*", optionsSuccessStatus: 200 }));
+app.set("trust proxy", true);
 app.use(express.json());
 // ! *the extended: true option will work fine with postman but not with front-end apps*
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieSession({ signed: false, secure: false }));
 
 app.use("/api/post", postRouter);
 app.use("/api/comment", commentRouter);
