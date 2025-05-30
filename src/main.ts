@@ -1,6 +1,7 @@
-import express, { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
 import connectDB from "./db/db";
+import { commentRouter } from "./routes/comment/comment";
 import { postRouter } from "./routes/post/post";
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/post", postRouter);
+app.use("/api/comment", commentRouter);
 
 declare global {
   interface CustomError extends Error {
