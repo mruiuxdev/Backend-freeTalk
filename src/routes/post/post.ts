@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import Post from "../../models/post/post";
 import { BadRequestError, NotFoundError } from "../../errors";
 import { requireAuth } from "../../middlewares";
+import User from "../../models/user/user";
 
 const router = Router();
 
@@ -45,6 +46,12 @@ router.post(
 
       const newPost = Post.build({ title, content });
       await newPost.save();
+
+      await User.findOneAndUpdate(
+        { _id: req.currentUser!.userId },
+        { $push: { posts: newPost._id } },
+        { new: true }
+      );
 
       res.status(201).json(newPost);
     } catch (error) {
@@ -96,12 +103,20 @@ router.delete(
       return next(new BadRequestError("Post id is required!"));
     }
 
-    const checkedId = await Post.findById(id);
-    if (!checkedId) {
+    const checkedPost = await Post.findById(id);
+    if (!checkedPost) {
       return next(new NotFoundError());
     }
+
     try {
-      await Post.findOneAndDelete({ _id: checkedId });
+      await Post.findOneAndDelete({ _id: checkedPost._id });
+      await User.findOneAndUpdate(
+        { _id: req.currentUser!.userId },
+        {
+          $pull: { posts: checkedPost._id },
+        },
+        { new: true }
+      );
     } catch (error) {
       next(error);
     }
