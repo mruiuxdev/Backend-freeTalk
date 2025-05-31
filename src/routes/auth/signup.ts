@@ -18,7 +18,7 @@ router.post(
         );
       }
 
-      const newUser = new User({ email, password });
+      const newUser = User.build({ email, password });
       await newUser.save();
 
       req.session = {

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import Post from "../../models/post/post";
-import { requireAuth } from "../../middlewares/require-auth";
 import { BadRequestError, NotFoundError } from "../../errors";
+import { requireAuth } from "../../middlewares";
 
 const router = Router();
 
@@ -43,7 +43,7 @@ router.post(
         return next(new BadRequestError("Title and content are required!"));
       }
 
-      const newPost = new Post({ title, content });
+      const newPost = Post.build({ title, content });
       await newPost.save();
 
       res.status(201).json(newPost);

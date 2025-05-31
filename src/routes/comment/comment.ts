@@ -24,15 +24,18 @@ router.post(
       if (!post) {
         return next(new BadRequestError("Post not found!"));
       } else {
-        const newComment = new Comment({
+        const newComment = Comment.build({
           username: username ?? "anonymous",
           content,
         });
 
         await newComment.save();
 
-        post.comments.push(newComment._id);
-        await post.save();
+        const updatedPost = await Post.findByIdAndUpdate(
+          postId,
+          { $push: { comments: newComment } },
+          { new: true }
+        );
 
         res.status(201).json(newComment);
       }
