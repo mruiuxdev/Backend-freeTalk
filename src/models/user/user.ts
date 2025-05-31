@@ -21,15 +21,15 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (done) {
+userSchema.pre("save", async function (next) {
   if (this.isModified("password") || this.isNew) {
-    const hashedPassword = authenticationService.pwdToHash(
+    const hashedPassword = await authenticationService.pwdToHash(
       this.get("password")
     );
-    this.set("password, hashed");
+    this.set("password", hashedPassword);
   }
 
-  done();
+  next();
 });
 
 const User = mongoose.model("User", userSchema);

@@ -6,8 +6,14 @@ const router = Router();
 router.get(
   "/current-user",
   currentUser,
-  async (req: Request, res: Response, next: NextFunction) => {
-    res.status(200).send({ currentUser: req.currentUser });
+  (req: Request, res: Response, next: NextFunction) => {
+    if (!req.currentUser) {
+      const error = new Error("No user found") as CustomError;
+      error.status = 400;
+      return next(error);
+    }
+
+    res.status(200).json({ currentUser: req.currentUser });
   }
 );
 

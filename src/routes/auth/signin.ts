@@ -12,6 +12,7 @@ router.post(
       const { email, password } = req.body;
 
       const user = await User.findOne({ email });
+
       if (!user) {
         const error = new Error("Invalid Credentials") as CustomError;
         error.status = 400;
@@ -22,7 +23,7 @@ router.post(
         user.password,
         password
       );
-      if (matchedPassword) {
+      if (!matchedPassword) {
         const error = new Error("Invalid Credentials") as CustomError;
         error.status = 400;
         return next(error);
@@ -35,7 +36,10 @@ router.post(
       );
 
       req.session = { jwt: token };
-      res.status(200).json(user);
+
+      const { password: _, ...userWithoutPassword } = user.toObject();
+
+      res.status(200).json(userWithoutPassword);
     } catch (error) {
       next(error);
     }

@@ -3,10 +3,14 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import connectDB from "./db/db";
+import { currentUser } from "./middlewares/current-user";
+import { requireAuth } from "./middlewares/require-auth";
+import { signinRouter } from "./routes/auth/signin";
+import { signoutRouter } from "./routes/auth/signout";
+import { signupRouter } from "./routes/auth/signup";
 import { commentRouter } from "./routes/comment/comment";
 import { postRouter } from "./routes/post/post";
-import { requireAuth } from "./middlewares/require-auth";
-import { currentUser } from "./middlewares/current-user";
+import { currentUserRouter } from "./routes/auth/current-user";
 
 dotenv.config();
 connectDB();
@@ -21,6 +25,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieSession({ signed: false, secure: false }));
 
 app.use(currentUser);
+
+app.use("/api", signinRouter);
+app.use("/api", signupRouter);
+app.use("/api", signoutRouter);
+app.use("/api", currentUserRouter);
 
 app.use("/api/post", postRouter);
 app.use("/api/comment", requireAuth, commentRouter);
