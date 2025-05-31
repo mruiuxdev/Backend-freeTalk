@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { DatabaseConnectionError } from "../errors";
 
 const connectDB = async () => {
   if (!process.env.MONGO_URI) throw new Error("MONGO URI is required");
@@ -7,7 +8,8 @@ const connectDB = async () => {
     .connect(process.env.MONGO_URI)
     .then((db) => console.log(db.connection.host))
     .catch((err) => {
-      throw new Error(err.message);
+      console.error(err);
+      new DatabaseConnectionError();
     });
 };
 

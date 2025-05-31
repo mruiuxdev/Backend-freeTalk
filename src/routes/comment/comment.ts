@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import Comment from "../../models/comment/comment";
 import Post from "../../models/post/post";
+import { BadRequestError } from "../../errors";
 
 const router = Router();
 
@@ -11,36 +12,30 @@ router.post(
     const { postId } = req.params;
 
     if (!postId) {
-      const error = new Error("Post id is required!") as CustomError;
-      error.status = 400;
-      return next(error);
+      return next(new BadRequestError("Post id is required!"));
     }
 
     if (!content) {
-      const error = new Error("Content is required!") as CustomError;
-      error.status = 400;
-      return next(error);
+      return next(new BadRequestError("Content is required!"));
     }
 
     try {
       const post = await Post.findById(postId);
       if (!post) {
-        const error = new Error("Post not found!") as CustomError;
-        error.status = 404;
-        return next(error);
+        return next(new BadRequestError("Post not found!"));
+      } else {
+        const newComment = new Comment({
+          username: username ?? "anonymous",
+          content,
+        });
+
+        await newComment.save();
+
+        post.comments.push(newComment._id);
+        await post.save();
+
+        res.status(201).json(newComment);
       }
-
-      const newComment = new Comment({
-        username: username ?? "anonymous",
-        content,
-      });
-
-      await newComment.save();
-
-      post.comments.push(newComment._id);
-      await post.save();
-
-      res.status(201).json(newComment);
     } catch (error) {
       next(error);
     }
@@ -53,26 +48,18 @@ router.delete(
     const { commentId, postId } = req.params;
 
     if (!commentId || !postId) {
-      const error = new Error(
-        "Comment and post id are required!"
-      ) as CustomError;
-      error.status = 400;
-      return next(error);
+      return next(new BadRequestError("Comment and post id are required!"));
     }
 
     try {
       const post = await Post.findById(postId);
       if (!post) {
-        const error = new Error("Post not found!") as CustomError;
-        error.status = 404;
-        return next(error);
+        return next(new BadRequestError("Post not found!"));
       }
 
       const comment = await Comment.findById(commentId);
       if (!comment) {
-        const error = new Error("Comment not found!") as CustomError;
-        error.status = 404;
-        return next(error);
+        return next(new BadRequestError("Comment not found!"));
       }
 
       await Comment.findByIdAndDelete(commentId);

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import User from "../../models/user/user";
 import { authenticationService } from "../../utils/auth";
 import jwt from "jsonwebtoken";
+import { BadRequestError } from "../../errors";
 
 const router = Router();
 
@@ -12,34 +13,27 @@ router.post(
       const { email, password } = req.body;
 
       const user = await User.findOne({ email });
-
       if (!user) {
-        const error = new Error("Invalid Credentials") as CustomError;
-        error.status = 400;
-        return next(error);
+        return next(new BadRequestError("Invalid Credentials"));
+      } else {
+        const matchedPassword = await authenticationService.pwdCompare(
+          user.password,
+          password
+        );
+        if (!matchedPassword) next(new BadRequestError("Invalid Credentials"));
+
+        const token = jwt.sign(
+          { email, userId: user._id },
+          process.env.JWT_SECRET!,
+          { expiresIn: "10h" }
+        );
+
+        req.session = { jwt: token };
+
+        const { password: _, ...userWithoutPassword } = user.toObject();
+
+        res.status(200).json(userWithoutPassword);
       }
-
-      const matchedPassword = await authenticationService.pwdCompare(
-        user.password,
-        password
-      );
-      if (!matchedPassword) {
-        const error = new Error("Invalid Credentials") as CustomError;
-        error.status = 400;
-        return next(error);
-      }
-
-      const token = jwt.sign(
-        { email, userId: user._id },
-        process.env.JWT_SECRET!,
-        { expiresIn: "10h" }
-      );
-
-      req.session = { jwt: token };
-
-      const { password: _, ...userWithoutPassword } = user.toObject();
-
-      res.status(200).json(userWithoutPassword);
     } catch (error) {
       next(error);
     }

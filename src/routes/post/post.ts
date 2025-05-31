@@ -1,33 +1,28 @@
 import { NextFunction, Request, Response, Router } from "express";
 import Post from "../../models/post/post";
 import { requireAuth } from "../../middlewares/require-auth";
+import { BadRequestError, NotFoundError } from "../../errors";
 
 const router = Router();
 
-router.get(
-  "/",
-  requireAuth,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const posts = await Post.find().populate("comments");
-      res.status(200).json(posts);
-    } catch (error) {
-      next(error);
-    }
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const posts = await Post.find();
+    res.status(200).json(posts);
+  } catch (error) {
+    next(error);
   }
-);
+});
 
 router.get(
   "/:id",
   requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const post = await Post.findById(req.params.id);
+      const post = await Post.findById(req.params.id).populate("comments");
 
       if (!post) {
-        const error = new Error("Post not found") as CustomError;
-        error.status = 404;
-        return next(error);
+        return next(new BadRequestError("Post not found"));
       }
 
       res.status(200).json(post);
@@ -45,11 +40,7 @@ router.post(
       const { title, content } = req.body;
 
       if (!title || !content) {
-        const error = new Error(
-          "Title and content are required!"
-        ) as CustomError;
-        error.status = 400;
-        return next(error);
+        return next(new BadRequestError("Title and content are required!"));
       }
 
       const newPost = new Post({ title, content });
@@ -70,17 +61,11 @@ router.post(
     const { title, content } = req.body;
 
     if (!id) {
-      const error = new Error("Post id is required!") as CustomError;
-      error.status = 400;
-      return next(error);
+      return next(new BadRequestError("Post id is required!"));
     }
 
     const checkedId = await Post.findById(id);
-    if (!checkedId) {
-      const error = new Error("Post id is not found!") as CustomError;
-      error.status = 404;
-      return next(error);
-    }
+    if (!checkedId) next(new NotFoundError());
     let updatedPost;
     try {
       /*  
@@ -108,16 +93,12 @@ router.delete(
     const { id } = req.params;
 
     if (!id) {
-      const error = new Error("Post id is required!") as CustomError;
-      error.status = 400;
-      return next(error);
+      return next(new BadRequestError("Post id is required!"));
     }
 
     const checkedId = await Post.findById(id);
     if (!checkedId) {
-      const error = new Error("Post id is not found!") as CustomError;
-      error.status = 404;
-      return next(error);
+      return next(new NotFoundError());
     }
     try {
       await Post.findOneAndDelete({ _id: checkedId });
