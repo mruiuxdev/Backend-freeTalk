@@ -5,6 +5,8 @@ import express, { NextFunction, Request, Response } from "express";
 import connectDB from "./db/db";
 import { commentRouter } from "./routes/comment/comment";
 import { postRouter } from "./routes/post/post";
+import { requireAuth } from "./middlewares/require-auth";
+import { currentUser } from "./middlewares/current-user";
 
 dotenv.config();
 connectDB();
@@ -18,11 +20,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieSession({ signed: false, secure: false }));
 
-app.use("/api/post", postRouter);
-app.use("/api/comment", commentRouter);
+app.use(currentUser);
 
-app.use("/api", (req, res) => {
-  res.status(404).json({ message: "API route not found" });
+app.use("/api/post", postRouter);
+app.use("/api/comment", requireAuth, commentRouter);
+
+app.use("/api", (_req, _res, next) => {
+  const error = new Error("Endpoint Not Found!") as CustomError;
+  error.status = 404;
+  return next(error);
 });
 
 declare global {
@@ -35,6 +41,8 @@ app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
   err.status
     ? res.status(err.status).json({ message: err.message })
     : res.status(500).json({ message: "Something went wrong" });
+
+  next();
 });
 
 app.listen(process.env.PORT || 8000, () =>

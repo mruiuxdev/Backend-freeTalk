@@ -1,54 +1,70 @@
 import { NextFunction, Request, Response, Router } from "express";
 import Post from "../../models/post/post";
+import { requireAuth } from "../../middlewares/require-auth";
 
 const router = Router();
 
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const posts = await Post.find().populate("comments");
-    res.status(200).json(posts);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const post = await Post.findById(req.params.id);
-
-    if (!post) {
-      const error = new Error("Post not found") as CustomError;
-      error.status = 404;
-      return next(error);
+router.get(
+  "/",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const posts = await Post.find().populate("comments");
+      res.status(200).json(posts);
+    } catch (error) {
+      next(error);
     }
-
-    res.status(200).json(post);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-router.post("/new", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { title, content } = req.body;
+router.get(
+  "/:id",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const post = await Post.findById(req.params.id);
 
-    if (!title || !content) {
-      const error = new Error("Title and content are required!") as CustomError;
-      error.status = 400;
-      return next(error);
+      if (!post) {
+        const error = new Error("Post not found") as CustomError;
+        error.status = 404;
+        return next(error);
+      }
+
+      res.status(200).json(post);
+    } catch (error) {
+      next(error);
     }
-
-    const newPost = new Post({ title, content });
-    await newPost.save();
-
-    res.status(201).json(newPost);
-  } catch (error) {
-    next(error);
   }
-});
+);
+
+router.post(
+  "/new",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { title, content } = req.body;
+
+      if (!title || !content) {
+        const error = new Error(
+          "Title and content are required!"
+        ) as CustomError;
+        error.status = 400;
+        return next(error);
+      }
+
+      const newPost = new Post({ title, content });
+      await newPost.save();
+
+      res.status(201).json(newPost);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post(
   "/update/:id",
+  requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const { title, content } = req.body;
@@ -87,6 +103,7 @@ router.post(
 
 router.delete(
   "/delete/:id",
+  requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 

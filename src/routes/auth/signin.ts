@@ -30,7 +30,8 @@ router.post(
 
       const token = jwt.sign(
         { email, userId: user._id },
-        process.env.JWT_SECRET!
+        process.env.JWT_SECRET!,
+        { expiresIn: "10h" }
       );
 
       req.session = { jwt: token };
