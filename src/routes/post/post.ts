@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
-import Post from "../../models/post/post";
 import { BadRequestError, NotFoundError } from "../../errors";
-import { requireAuth } from "../../middlewares";
+import { requireAuth, uploadImages } from "../../middlewares";
+import Post from "../../models/post/post";
 import User from "../../models/user/user";
 
 const router = Router();
@@ -36,6 +36,7 @@ router.get(
 router.post(
   "/new",
   requireAuth,
+  uploadImages,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { title, content } = req.body;
@@ -44,11 +45,26 @@ router.post(
         return next(new BadRequestError("Title and content are required!"));
       }
 
-      const newPost = Post.build({ title, content });
+      if (!req.files || !(req.files as Express.Multer.File[]).length) {
+        return next(new BadRequestError("At least one image is required!"));
+      }
+
+      const images = (req.files as Express.Multer.File[]).map((file) => {
+        return {
+          src: `/uploads/${file.filename}`,
+        };
+      });
+
+      const newPost = Post.build({
+        title,
+        content,
+        images,
+      });
+
       await newPost.save();
 
-      await User.findOneAndUpdate(
-        { _id: req.currentUser!.userId },
+      await User.findByIdAndUpdate(
+        req.currentUser!.userId,
         { $push: { posts: newPost._id } },
         { new: true }
       );
@@ -122,6 +138,70 @@ router.delete(
     }
 
     res.status(200).json({ message: "Post deleted successfully" });
+  }
+);
+
+router.post(
+  "/:id/add/images",
+  requireAuth,
+  uploadImages,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      if (!req.files || !(req.files as Express.Multer.File[]).length) {
+        return next(new BadRequestError("At least one image is required!"));
+      }
+
+      const post = await Post.findById(id);
+      if (!post) {
+        return next(new BadRequestError("Post not found"));
+      }
+
+      const images = (req.files as Express.Multer.File[]).map((file) => {
+        return {
+          src: `/uploads/${file.filename}`,
+        };
+      });
+
+      post.images.push(...images);
+      await post.save();
+
+      res.status(200).json(post);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post(
+  "/:id/delete/images",
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { imageUrls } = req.body;
+
+      if (!Array.isArray(imageUrls) || imageUrls.length === 0) {
+        return next(new BadRequestError("No image URLs provided"));
+      }
+
+      const urls = imageUrls.map((img) => img.src);
+
+      const post = await Post.findByIdAndUpdate(
+        id,
+        { $pull: { images: { src: { $in: urls } } } },
+        { new: true }
+      );
+
+      if (!post) {
+        return next(new BadRequestError("Post not found"));
+      }
+
+      res.status(200).json(post);
+    } catch (error) {
+      next(error);
+    }
   }
 );
 

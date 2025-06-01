@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import type { ErrorRequestHandler } from "express";
 import express from "express";
+import path from "path";
 import connectDB from "./db/db";
 import { NotFoundError } from "./errors";
 import { errorHandler, requireAuth } from "./middlewares";
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieSession({ signed: false, secure: false }));
 
 app.use(currentUser);
+app.use("/uploads", express.static(path.join(process.cwd(), "src", "uploads")));
 
 app.use("/api", signinRouter);
 app.use("/api", signupRouter);

@@ -4,12 +4,14 @@ import { CommentDoc } from "../comment/comment";
 export interface PostDoc extends mongoose.Document {
   title: string;
   content: string;
+  images: Array<{ src: string }>;
   comments: Array<CommentDoc>;
 }
 
 export interface CreatePostDto {
   title: string;
   content: string;
+  images: Array<{ src: string }>;
 }
 
 export interface PostModel extends mongoose.Model<PostDoc> {
@@ -26,6 +28,7 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    images: [{ src: { type: String, required: true } }],
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,
