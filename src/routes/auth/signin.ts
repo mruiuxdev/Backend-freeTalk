@@ -3,11 +3,15 @@ import User from "../../models/user/user";
 import { authenticationService } from "../../utils/auth";
 import jwt from "jsonwebtoken";
 import { BadRequestError } from "../../errors";
+import { validationRequest } from "../../middlewares";
+import { body } from "express-validator";
 
 const router = Router();
 
 router.post(
   "/signin",
+  [body("email").notEmpty(), body("password").notEmpty()],
+  validationRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email, password } = req.body;
