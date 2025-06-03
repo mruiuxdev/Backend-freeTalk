@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
+import { BadRequestError } from "../../errors";
 import Comment from "../../models/comment/comment";
 import Post from "../../models/post/post";
-import { BadRequestError } from "../../errors";
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.post(
 
         await newComment.save();
 
-        const updatedPost = await Post.findByIdAndUpdate(
+        await Post.findByIdAndUpdate(
           postId,
           { $push: { comments: newComment } },
           { new: true }
