@@ -1,8 +1,13 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { BadRequestError, NotFoundError } from "../../errors";
-import { requireAuth, uploadImages } from "../../middlewares";
+import {
+  requireAuth,
+  uploadImages,
+  validationRequest,
+} from "../../middlewares";
 import Post from "../../models/post/post";
 import User from "../../models/user/user";
+import { body, param } from "express-validator";
 
 const router = Router();
 
@@ -18,6 +23,8 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 router.get(
   "/:id",
   requireAuth,
+  [param("id").notEmpty().withMessage("Post ID is required")],
+  validationRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const post = await Post.findById(req.params.id).populate("comments");
@@ -37,6 +44,11 @@ router.post(
   "/new",
   requireAuth,
   uploadImages,
+  [
+    body("content").notEmpty().withMessage("Content is required"),
+    body("title").notEmpty().withMessage("Title is required"),
+  ],
+  validationRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { title, content } = req.body;
@@ -79,6 +91,8 @@ router.post(
 router.post(
   "/update/:id",
   requireAuth,
+  [param("id").notEmpty().withMessage("Post ID is required")],
+  validationRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const { title, content } = req.body;
@@ -112,6 +126,8 @@ router.post(
 router.delete(
   "/delete/:id",
   requireAuth,
+  [param("id").notEmpty().withMessage("Post ID is required")],
+  validationRequest,
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 

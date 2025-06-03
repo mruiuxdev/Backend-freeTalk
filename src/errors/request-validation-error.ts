@@ -10,6 +10,7 @@ export class RequestValidationError extends CustomError {
 
   generateErrors() {
     return this.errors.map((error) => {
+      console.log(this.errors);
       return {
         message: error.msg,
         field: error.type === "field" ? error.path : "",
